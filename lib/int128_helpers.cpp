@@ -1,4 +1,4 @@
-#include "int128_helpers.hpp"
+#include <int128_helpers.hpp>
 #include <algorithm>
 #include <stdexcept>
 
@@ -19,7 +19,7 @@ std::string to_string(const uint128_t& n) {
     }
 }
 
-uint128_t from_string(const std::string& s) {
+uint128_t parse_uint128(const std::string& s) {
     uint128_t res = 0;
     if (s.empty()) {
         throw std::invalid_argument("Cannot convert empty string to uint128_t");
@@ -43,7 +43,7 @@ std::istream& operator>>(std::istream& is, uint128_t& n) {
     is >> s;
     if (is) {
         try {
-            n = from_string(s);
+            n = parse_uint128(s);
         } catch (const std::invalid_argument&) {
             is.setstate(std::ios_base::failbit);
         } catch (const std::out_of_range&) {
@@ -79,6 +79,36 @@ std::string to_string(const int128_t& n) {
         std::reverse(num_part.begin(), num_part.end());
         s += num_part;
         return s;
+    }
+}
+
+int128_t parse_int128(const std::string& s) {
+    if (s.empty()) {
+        throw std::invalid_argument("Cannot convert empty string to int128_t");
+    }
+
+    if (s[0] == '-') {
+        // Manejar número negativo
+        if (s.length() == 1) {
+            throw std::invalid_argument("Invalid string for int128_t conversion: '-'");
+        }
+        uint128_t u_val = parse_uint128(s.substr(1));
+        uint128_t max_int_plus_1 = static_cast<uint128_t>(1) << 127;
+        if (u_val > max_int_plus_1) {
+            throw std::out_of_range("Input string represents a number too small for int128_t");
+        }
+        if (u_val == max_int_plus_1) {
+            return -static_cast<int128_t>(max_int_plus_1);
+        }
+        return -static_cast<int128_t>(u_val);
+    } else {
+        // Manejar número positivo
+        uint128_t u_val = parse_uint128(s);
+        uint128_t max_int = (static_cast<uint128_t>(1) << 127) - 1;
+        if (u_val > max_int) {
+            throw std::out_of_range("Input string represents a number too large for int128_t");
+        }
+        return static_cast<int128_t>(u_val);
     }
 }
 
