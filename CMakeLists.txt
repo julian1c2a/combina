@@ -12,7 +12,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 23)
 
 # Añade los archivos fuente al ejecutable
-add_executable(Combinatoria main.cpp lib/int128_helpers.cpp tests/test_helpers.cpp tests/test_advanced.cpp)
+add_executable(Combinatoria main.cpp lib/int128_helpers.cpp tests/test_helpers.cpp tests/test_advanced.cpp
+        inc/factoriales.hpp)
 
 # Añade los directorios de cabeceras a las rutas de inclusión
 target_include_directories(Combinatoria PUBLIC inc tests)

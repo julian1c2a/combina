@@ -1,3 +1,4 @@
+/.idea
 /.idea/copilot.data.migration.agent.xml
 /.idea/copilot.data.migration.ask2agent.xml
 /.idea/editor.xml
@@ -9,3 +10,6 @@
 /.idea/vcs.xml
 /.idea/.gitignore
 /.idea/Combinatoria.iml
+/.venv
+/cmake-build-debug-mingw
+/cmake-build-release-mingw
