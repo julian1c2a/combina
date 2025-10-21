@@ -1,55 +1,60 @@
-//
-// Created by julia on 21/10/2025.
-//
+#pragma once
 
-#ifndef COMBINATORIA_FACTORIALES_HPP
-#define COMBINATORIA_FACTORIALES_HPP
+#include <cstdint>
+#include <string>
+#include <iostream>
+#include <type_traits> // Para std::is_signed_v, std::is_unsigned_v
+#include <concepts>    // Para concepts
 
-#include<int128_helpers.hpp>
+// Alias de tipos para enteros de 128 bits
+using int128_t = __int128;
+using uint128_t = __uint128_t;
+
+// Concept para asegurar que el tipo es un entero de 128 bits
+template<typename T>
+concept Is128BitInteger = std::is_same_v<T, int128_t> || std::is_same_v<T, uint128_t>;
 
 /**
- * @brief Calcula el factorial de un número en tiempo de compilación para uint128_t.
+ * @brief Calcula el factorial de un número en tiempo de compilación.
  *
  * @details Esta función utiliza recursividad de plantilla para calcular el factorial.
  *          Al ser `constexpr`, el cálculo se realiza durante la compilación.
- *          Incluye una guarda para evitar el desbordamiento de `uint128_t`.
+ *          Maneja automáticamente los límites de desbordamiento para tipos con y sin signo.
  *
- * @tparam n El número entero no negativo del cual se calculará el factorial.
- * @return   El factorial de n (n!) si n < 35, de lo contrario 0 para indicar desbordamiento.
+ * @tparam N El número entero no negativo del cual se calculará el factorial.
+ * @tparam T El tipo de dato numérico (int128_t o uint128_t) sobre el que se realiza el cálculo.
+ * @return   El factorial de N (N!) si N está dentro del rango representable por T.
+ *           Devuelve 0 para N negativo (si T es con signo) o para N que cause desbordamiento.
  * @note     El límite de 34 es el máximo factorial que cabe en un `uint128_t`.
+ *           El límite de 33 es el máximo factorial que cabe en un `int128_t`.
  */
-template<uint128_t n>
-constexpr uint128_t factorial_constexpr() {
-    if constexpr ((n == 0) || (n == 1)) {
-        return static_cast<uint128_t>(1);
-    } else if constexpr (n < 35) {
-        return n * factorial_constexpr<n - 1>();
-    } else {
-        return static_cast<uint128_t>(0); // OVERFLOW
+template<Is128BitInteger T, T N>
+constexpr T factorial_constexpr() {
+    if constexpr (std::is_signed_v<T>) {
+        // Lógica para int128_t
+        if constexpr (N < 0) {
+            return static_cast<T>(0); // Factorial no definido para negativos
+        } else if constexpr ((N == 0) || (N == 1)) {
+            return static_cast<T>(1);
+        } else if constexpr (N < 34) {
+            // Límite para int128_t
+            return N * factorial_constexpr<T, N - 1>();
+        } else {
+            return static_cast<T>(0); // OVERFLOW
+        }
+    } else if constexpr (std::is_unsigned_v<T>) {
+        // Lógica para uint128_t
+        if constexpr ((N == 0) || (N == 1)) {
+            return static_cast<T>(1);
+        } else if constexpr (N < 35) {
+            // Límite para uint128_t
+            return N * factorial_constexpr<T, N - 1>();
+        } else {
+            return static_cast<T>(0); // OVERFLOW
+        }
     }
-}
-
-/**
- * @brief Calcula el factorial de un número en tiempo de compilación para int128_t.
- *
- * @details Similar a la versión para uint128_t, pero para enteros con signo.
- *          El factorial no está definido para números negativos.
- *
- * @tparam n El número entero no negativo del cual se calculará el factorial.
- * @return   El factorial de n (n!) si 0 <= n < 34. Devuelve 0 para n negativo o para n >= 34 (overflow).
- * @note     El límite de 33 es el máximo factorial que cabe en un `int128_t`.
- */
-template<int128_t n>
-constexpr int128_t factorial_constexpr() {
-    if constexpr (n < 0) {
-        return static_cast<int128_t>(0); // Factorial no definido para negativos
-    } else if constexpr ((n == 0) || (n == 1)) {
-        return static_cast<int128_t>(1);
-    } else if constexpr (n < 34) {
-        return n * factorial_constexpr<n - 1>();
-    } else {
-        return static_cast<int128_t>(0); // OVERFLOW
-    }
+    // Esto no debería ser alcanzable con el concept Is128BitInteger
+    return static_cast<T>(0);
 }
 
 /**
@@ -76,4 +81,3 @@ constexpr uint128_t factorial(uint128_t n);
  */
 constexpr int128_t factorial(int128_t n);
 
-#endif //COMBINATORIA_FACTORIALES_HPP
