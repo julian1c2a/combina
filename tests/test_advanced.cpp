@@ -6,7 +6,7 @@
 #include <chrono>
 
 // Hacemos los literales visibles para este archivo de pruebas
-using namespace int128_literals;
+using namespace integer_literals;
 
 void test_factorial_properties() {
     std::cout << "Running test_factorial_properties...\n";
@@ -27,13 +27,14 @@ void test_factorial_properties() {
     assert(factorial(34_u128) != 0 && factorial(35_u128) == 0);
     assert(factorial(33_i128) != 0 && factorial(34_i128) == 0);
 
-    // 4. Entradas Inválidas
-    assert(factorial(-1_i64) == 0);
-    assert(factorial(-10_i128) == 0);
+    // 4. Entradas Inválidas (ahora deben devolver -1 para tipos con signo)
+    assert(factorial(static_cast<int64_t>(-1)) == -1);
+    assert(factorial(static_cast<int128_t>(-10)) == -1);
 
     // 5. Pruebas con static_assert para verificar el cálculo en tiempo de compilación
     static_assert(factorial(10_u64) == 3628800, "Compile-time check failed");
     static_assert(factorial_ct<uint64_t, 12>() == 479001600, "Compile-time check failed");
+    static_assert(factorial_ct<int64_t, -1>() == -1, "Compile-time check for negative failed");
 
     std::cout << "test_factorial_properties passed.\n";
 }
@@ -41,9 +42,18 @@ void test_factorial_properties() {
 void test_factorial_known_values() {
     std::cout << "Running test_factorial_known_values...\n";
     const std::vector<uint128_t> known_factorials = {
-        1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800,
-        479001600, 6227020800, 87178291200, 1307674368000, 20922789888000,
-        355687428096000, 6402373705728000, 121645100408832000, 2432902008176640000_u128
+        1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, // 0! ... 11!
+        479001600, 6227020800, 87178291200, 1307674368000, // 12! ... 15!
+        20922789888000, 355687428096000, 6402373705728000, 121645100408832000, // 16! ... 19!
+        "2432902008176640000"_u128, "51090942171709440000"_u128, // 20! ... 21!
+        "1124000727777607680000"_u128, "25852016738884976640000"_u128, // 22! ... 23!
+        "620448401733239439360000"_u128, "15511210043330985984000000"_u128, // 24! ... 25!
+        "403291461126605635584000000"_u128, "10888869450418352160768000000"_u128, //26! ... 27!
+        "304888344611713860501504000000"_u128, "8841761993739701954543616000000"_u128, // 28! ... 29!
+        "265252859812191058636308480000000"_u128, "8222838654177922817725562880000000"_u128, // 30! ... 31!
+        "263130836933693530167218012160000000"_u128, // 32!
+        "8683317618811886495518194401280000000"_u128, // 33!
+        "295232799039604140847618609643520000000"_u128 // 34!
     };
 
     for (size_t i = 0; i < known_factorials.size(); ++i) {

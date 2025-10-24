@@ -2,8 +2,8 @@
 #include <test_helpers.hpp>
 #include <test_advanced.hpp> // Incluir la nueva cabecera de pruebas
 
-// Hacemos los literales _u128 y _i128 visibles en este archivo
-using namespace int128_literals;
+// Hacemos los literales visibles en este archivo
+using namespace integer_literals;
 
 int main() {
     run_tests(); // Ejecutar las pruebas básicas primero

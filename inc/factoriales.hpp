@@ -17,91 +17,154 @@ concept IsFactorialSupportedInteger = Is64BitInteger<T> || Is128BitInteger<T>;
 
 // --- Implementaciones de bajo nivel (privadas a este fichero) ---
 namespace detail {
-    /**
-     * @brief Implementación del factorial en tiempo de compilación para enteros de 64 bits.
-     */
-    template<Is64BitInteger T, T N>
-    constexpr T factorial_constexpr_64bits() {
+    // Implementación recursiva con desenrollado manual y comprobaciones de límites integradas.
+    template<IsFactorialSupportedInteger T, T N>
+    constexpr T factorial_impl() {
+        // 1. Comprobar límites y valores inválidos PRIMERO para evitar warnings de overflow.
         if constexpr (std::is_signed_v<T>) {
-            if constexpr (N < 0) return -1;
-            if constexpr (N < 21) return N > 1 ? N * factorial_constexpr_64bits<T, N - 1>() : 1;
+            if constexpr (N < 0) return -1; // DEVOLVEMOS -1 para negativos
+            if constexpr (Is64BitInteger<T> && N >= 21) return 0;
+            if constexpr (Is128BitInteger<T> && N >= 34) return 0;
         } else {
-            if constexpr (N < 21) return N > 1 ? N * factorial_constexpr_64bits<T, N - 1>() : 1;
+            if constexpr (Is64BitInteger<T> && N >= 21) return 0;
+            if constexpr (Is128BitInteger<T> && N >= 35) return 0;
         }
-        return 0; // OVERFLOW
-    }
 
-    /**
-     * @brief Implementación del factorial en tiempo de compilación para enteros de 128 bits.
-     */
-    template<Is128BitInteger T, T N>
-    constexpr T factorial_constexpr_128bits() {
-        if constexpr (std::is_signed_v<T>) {
-            if constexpr (N < 0) return -1;
-            if constexpr (N < 34) return N > 1 ? N * factorial_constexpr_128bits<T, N - 1>() : 1;
+        // 2. Casos base para la recursión.
+        if constexpr (N == 0) {
+            return 1;
+        } else if constexpr (N < 4) {
+            return N * factorial_impl<T, N - 1>();
         } else {
-            if constexpr (N < 35) return N > 1 ? N * factorial_constexpr_128bits<T, N - 1>() : 1;
+            // 3. Desenrollando de la recursión.
+            return N * (N - 1) * (N - 2) * (N - 3) * factorial_impl<T, N - 4>();
         }
-        return 0; // OVERFLOW
     }
 } // namespace detail
 
 /**
- * @brief Calcula el factorial de un número en tiempo de compilación.
- *
- * @details Delega a la implementación correcta (64 o 128 bits) según el tipo T.
- * @tparam T El tipo de dato (int64_t, uint64_t, int128_t, uint128_t).
- * @tparam N El número del cual se calculará el factorial.
- * @return El factorial de N, o 0 si hay desbordamiento o -1 si N es negativo.
+ * @brief Calcula el factorial de un número en tiempo de compilación (versión de plantilla).
+ * @return El factorial de N. Devuelve -1 para N negativo (tipos con signo) o 0 para overflow.
  */
 template<IsFactorialSupportedInteger T, T N>
 constexpr T factorial_ct() {
-    if constexpr (Is64BitInteger<T>) {
-        return detail::factorial_constexpr_64bits<T, N>();
-    } else if constexpr (Is128BitInteger<T>) {
-        return detail::factorial_constexpr_128bits<T, N>();
-    }
+    return detail::factorial_impl<T, N>();
 }
 
 /**
  * @brief Calcula el factorial de un número en tiempo de ejecución o compilación.
- *
- * @details Utiliza una tabla de búsqueda (switch) para devolver valores precalculados.
- *          Si el argumento `n` es una constante, el resultado se calcula en tiempo de compilación.
- * @tparam T El tipo de dato (int64_t, uint64_t, int128_t, uint128_t).
- * @param n El número del cual se calculará el factorial.
- * @return El factorial de n, o 0 si hay desbordamiento o -1 si n es negativo.
+ * @return El factorial de n. Devuelve -1 para n negativo (tipos con signo) o 0 para overflow.
  */
 template<IsFactorialSupportedInteger T>
 constexpr T factorial(T n) {
-    if (n < 0) return -1;
-
-    if constexpr (Is64BitInteger<T>) {
-        if (n > 20) return 0; // Límite para 64 bits
-    } else if constexpr (Is128BitInteger<T>) {
-        if constexpr (std::is_signed_v<T>) {
-            if (n > 33) return 0; // Límite para int128_t
-        } else {
-            if (n > 34) return 0; // Límite para uint128_t
-        }
+    if constexpr (std::is_signed_v<T>) {
+        if (n < 0) return -1; // DEVOLVEMOS -1 para negativos
     }
 
-    // La tabla de búsqueda se expandirá según sea necesario por el compilador
-    switch (n) {
-        case 0:
-        case 1: return 1;
-        case 2: return 2;
-        case 3: return 6;
-        case 4: return 24;
-        case 5: return 120;
-        case 6: return 720;
-        case 7: return 5040;
-        case 8: return 40320;
-        case 9: return 362880;
-        case 10: return 3628800;
-        // ... (se pueden añadir más casos si se desea, pero la recursividad los cubre)
-        default:
-            if (n > 1) return n * factorial(n - 1);
-            else return 0;
+    if constexpr (Is64BitInteger<T>) {
+        switch (n) {
+            case 0:
+            case 1: return factorial_ct<T, 1>();
+            case 2: return factorial_ct<T, 2>();
+            case 3: return factorial_ct<T, 3>();
+            case 4: return factorial_ct<T, 4>();
+            case 5: return factorial_ct<T, 5>();
+            case 6: return factorial_ct<T, 6>();
+            case 7: return factorial_ct<T, 7>();
+            case 8: return factorial_ct<T, 8>();
+            case 9: return factorial_ct<T, 9>();
+            case 10: return factorial_ct<T, 10>();
+            case 11: return factorial_ct<T, 11>();
+            case 12: return factorial_ct<T, 12>();
+            case 13: return factorial_ct<T, 13>();
+            case 14: return factorial_ct<T, 14>();
+            case 15: return factorial_ct<T, 15>();
+            case 16: return factorial_ct<T, 16>();
+            case 17: return factorial_ct<T, 17>();
+            case 18: return factorial_ct<T, 18>();
+            case 19: return factorial_ct<T, 19>();
+            case 20: return factorial_ct<T, 20>();
+            default: return 0; // Overflow
+        }
+    } else if constexpr (Is128BitInteger<T>) {
+        if constexpr (std::is_signed_v<T>) {
+            switch (n) {
+                case 0:
+                case 1: return factorial_ct<T, 1>();
+                case 2: return factorial_ct<T, 2>();
+                case 3: return factorial_ct<T, 3>();
+                case 4: return factorial_ct<T, 4>();
+                case 5: return factorial_ct<T, 5>();
+                case 6: return factorial_ct<T, 6>();
+                case 7: return factorial_ct<T, 7>();
+                case 8: return factorial_ct<T, 8>();
+                case 9: return factorial_ct<T, 9>();
+                case 10: return factorial_ct<T, 10>();
+                case 11: return factorial_ct<T, 11>();
+                case 12: return factorial_ct<T, 12>();
+                case 13: return factorial_ct<T, 13>();
+                case 14: return factorial_ct<T, 14>();
+                case 15: return factorial_ct<T, 15>();
+                case 16: return factorial_ct<T, 16>();
+                case 17: return factorial_ct<T, 17>();
+                case 18: return factorial_ct<T, 18>();
+                case 19: return factorial_ct<T, 19>();
+                case 20: return factorial_ct<T, 20>();
+                case 21: return factorial_ct<T, 21>();
+                case 22: return factorial_ct<T, 22>();
+                case 23: return factorial_ct<T, 23>();
+                case 24: return factorial_ct<T, 24>();
+                case 25: return factorial_ct<T, 25>();
+                case 26: return factorial_ct<T, 26>();
+                case 27: return factorial_ct<T, 27>();
+                case 28: return factorial_ct<T, 28>();
+                case 29: return factorial_ct<T, 29>();
+                case 30: return factorial_ct<T, 30>();
+                case 31: return factorial_ct<T, 31>();
+                case 32: return factorial_ct<T, 32>();
+                case 33: return factorial_ct<T, 33>();
+                default: return 0; // Overflow
+            }
+        } else {
+            // unsigned 128-bit
+            switch (n) {
+                case 0:
+                case 1: return factorial_ct<T, 1>();
+                case 2: return factorial_ct<T, 2>();
+                case 3: return factorial_ct<T, 3>();
+                case 4: return factorial_ct<T, 4>();
+                case 5: return factorial_ct<T, 5>();
+                case 6: return factorial_ct<T, 6>();
+                case 7: return factorial_ct<T, 7>();
+                case 8: return factorial_ct<T, 8>();
+                case 9: return factorial_ct<T, 9>();
+                case 10: return factorial_ct<T, 10>();
+                case 11: return factorial_ct<T, 11>();
+                case 12: return factorial_ct<T, 12>();
+                case 13: return factorial_ct<T, 13>();
+                case 14: return factorial_ct<T, 14>();
+                case 15: return factorial_ct<T, 15>();
+                case 16: return factorial_ct<T, 16>();
+                case 17: return factorial_ct<T, 17>();
+                case 18: return factorial_ct<T, 18>();
+                case 19: return factorial_ct<T, 19>();
+                case 20: return factorial_ct<T, 20>();
+                case 21: return factorial_ct<T, 21>();
+                case 22: return factorial_ct<T, 22>();
+                case 23: return factorial_ct<T, 23>();
+                case 24: return factorial_ct<T, 24>();
+                case 25: return factorial_ct<T, 25>();
+                case 26: return factorial_ct<T, 26>();
+                case 27: return factorial_ct<T, 27>();
+                case 28: return factorial_ct<T, 28>();
+                case 29: return factorial_ct<T, 29>();
+                case 30: return factorial_ct<T, 30>();
+                case 31: return factorial_ct<T, 31>();
+                case 32: return factorial_ct<T, 32>();
+                case 33: return factorial_ct<T, 33>();
+                case 34: return factorial_ct<T, 34>();
+                default: return 0; // Overflow
+            }
+        }
     }
 }

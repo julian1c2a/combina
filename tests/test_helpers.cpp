@@ -5,7 +5,7 @@
 #include <cassert>
 
 // Hacemos los literales visibles para este archivo de pruebas
-using namespace int128_literals;
+using namespace integer_literals;
 
 // --- Definiciones de las Funciones de Test ---
 
