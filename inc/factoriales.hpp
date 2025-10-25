@@ -73,13 +73,6 @@ constexpr T factorial_ct_val() {
 template<IsFactorialSupportedInteger T>
 constexpr T factorial(T n) {
     using implementation_details::factorial_from_table;
-    using std::is_signed_v;
-
-    if constexpr (is_signed_v<T>) {
-        if (n < 0) {
-            return -1; // Error para n negativo
-        }
-    }
 
     // Delegamos toda la lógica a la función auxiliar que ya usa la tabla
     // y maneja los límites y los tipos de precisión arbitraria.

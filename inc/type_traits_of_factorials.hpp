@@ -199,14 +199,25 @@ namespace implementation_details {
     template<IsFactorialSupportedInteger T>
     constexpr T factorial_from_table(T n) {
         constexpr size_t limit = get_factorial_limit<T>();
-        constexpr size_t sz_table = limit + 1;
 
-        if constexpr ((limit <= 170) && (limit != 0)) {
-            // Para tipos de longitud limitada
+        if constexpr (is_signed_v<T>) {
+            if (n < 0) {
+                return -1; // Caso 1: Número negativo
+            }
+        }
+
+        if constexpr (limit != 0) {
+            if (static_cast<size_t>(n) > limit) {
+                return 0; // Caso 2: Overflow
+            }
+        }
+
+        // Caso 3: El número es válido, buscar en la tabla o calcular
+        if constexpr (limit != 0 && limit <= 170) {
+            constexpr size_t sz_table = limit + 1;
             static constexpr std::array<T, sz_table> table{generate_extended_factorial_table<T, sz_table>()};
             return table[static_cast<size_t>(n)];
         } else {
-            // Para tipos de precisión arbitraria (mp_int_t), calculamos en runtime
             return factorial_rt<T>(n);
         }
     }
