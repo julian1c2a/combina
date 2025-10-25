@@ -8,7 +8,7 @@ using namespace integer_literals;
 
 int main() {
     run_tests(); // Ejecutar las pruebas básicas primero
-    // run_advanced_tests(); // Ejecutar las nuevas pruebas avanzadas
+    run_advanced_tests(); // Ejecutar las nuevas pruebas avanzadas
 
     // std::cout << "Introduce un numero grande (de hasta 128 bits):" << std::endl;
     // uint128_t my_number;

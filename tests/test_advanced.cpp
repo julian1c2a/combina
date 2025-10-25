@@ -33,8 +33,10 @@ void test_factorial_properties() {
 
     // 5. Pruebas con static_assert para verificar el cálculo en tiempo de compilación
     static_assert(factorial(10_u64) == 3628800, "Compile-time check failed");
-    static_assert(factorial_ct<uint64_t, 12>() == 479001600, "Compile-time check failed");
-    static_assert(factorial_ct<int64_t, -1>() == -1, "Compile-time check for negative failed");
+    static_assert(factorial_ct<uint64_t, 12>() == 479001600, "Compile-time check for 12! failed");
+    // La comprobación de -1 en factorial_ct no es una expresión constante pura para el compilador,
+    // por lo que usamos un assert en lugar de static_assert.
+    assert((factorial_ct<int64_t, -1>() == -1));
 
     std::cout << "test_factorial_properties passed.\n";
 }
