@@ -33,10 +33,11 @@ void test_factorial_properties() {
 
     // 5. Pruebas con static_assert para verificar el cálculo en tiempo de compilación
     static_assert(factorial(10_u64) == 3628800, "Compile-time check failed");
-    static_assert(factorial_ct<uint64_t, 12>() == 479001600, "Compile-time check for 12! failed");
+    static_assert(factorial_ct_val<uint64_t, 12>() == 479001600,
+                  "Compile-time check for 12! failed");
     // La comprobación de -1 en factorial_ct no es una expresión constante pura para el compilador,
     // por lo que usamos un assert en lugar de static_assert.
-    assert((factorial_ct<int64_t, -1>() == -1));
+    assert((factorial_ct_val<int64_t, -1>() == -1));
 
     std::cout << "test_factorial_properties passed.\n";
 }
@@ -75,7 +76,7 @@ void demonstrate_performance_test() {
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    for (int val : test_values) {
+    for (int val: test_values) {
         result = factorial(static_cast<uint64_t>(val));
     }
 
@@ -83,8 +84,9 @@ void demonstrate_performance_test() {
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 
     std::cout << "Time to execute factorial(" << value_to_test << ") " << num_iterations << " times: "
-              << duration.count() << " microseconds.\n";
-    std::cout << "Average time per call: " << static_cast<double>(duration.count()) / num_iterations << " microseconds.\n";
+            << duration.count() << " microseconds.\n";
+    std::cout << "Average time per call: " << static_cast<double>(duration.count()) / num_iterations <<
+            " microseconds.\n";
     std::cout << "(Last computed result: " << result << ")\n"; // Para asegurar que 'result' se usa
     std::cout << "--- End of Performance Test ---\n";
 }

@@ -9,28 +9,43 @@
  * @return El factorial de N. Devuelve -1 para N negativo (tipos con signo) o 0 para overflow.
  */
 template<IsFactorialSupportedInteger T, T N>
-constexpr T factorial_ct() {
+constexpr T factorial_ct_val() {
+    using implementation_details::factorial_from_table;
+    using std::is_signed_v;
+
+    // Validación del argumento de plantilla N
+    if constexpr (is_signed_v<T> && N < 0) {
+        return -1;
+    }
+
+    // Reutilizamos la lógica centralizada y robusta de factorial_from_table.
+    // Esto elimina la duplicación de código y la tabla redundante.
+    constexpr T result = factorial_from_table(static_cast<T>(N));
+    return result;
+
+    /* --- CÓDIGO ORIGINAL COMENTADO ---
+     * El código de abajo es la implementación original, que es compleja y redundante.
+     * Se ha reemplazado por la llamada a factorial_from_table de arriba.
+
     using implementation_details::get_factorial_limit;
     using implementation_details::generate_extended_factorial_table;
-    using std::is_signed_v;
     static constexpr size_t factorial_limit{get_factorial_limit<T>()};
-
     static constexpr std::array<T, 35> factorial_table{generate_extended_factorial_table<T, 35>()};
 
-    if constexpr (std::is_signed_v<T> && (N < 0)) return -1; // Error argumento negativo
-    else if constexpr (N > factorial_limit) return 0; // Overflow
+    if constexpr (std::is_signed_v<T> && (N < 0)) return -1;
+    else if constexpr (N > factorial_limit) return 0;
     else if constexpr (Is8To128BitInteger<T>)
         return static_cast<T>(factorial_table[static_cast<size_t>(N)]);
     else if constexpr (Is256To1024BitInteger<T>) {
         if constexpr (std::is_signed_v<T> && (N < 0)) {
-            return -1; // N Negativo es un error en el argumento
+            return -1;
         } else if constexpr (N > get_factorial_limit<T>()) {
-            return 0; // Overflow
+            return 0;
         } else {
             if constexpr (N <= 34) {
                 return static_cast<T>(factorial_table[static_cast<size_t>(N)]);
             } else {
-                T result{factorial_table[34]}; // Empezamos desde 34!
+                T result{factorial_table[34]};
                 for (T i{34}; i <= static_cast<T>(N); ++i)
                     result *= i;
                 return result;
@@ -38,7 +53,7 @@ constexpr T factorial_ct() {
         }
     } else if constexpr (IsInftyInteger<T>) {
         if constexpr (is_signed_v<T> && (N < 0))
-            return -1; // N Negativo es un error en el argumento
+            return -1;
         else {
             T result{factorial_table[2]};
             for (T i = 3; i <= N; ++i) {
@@ -46,7 +61,8 @@ constexpr T factorial_ct() {
             }
             return result;
         }
-    } else return 0; // Tipo no soportado
+    } else return 0;
+    */
 }
 
 /**
