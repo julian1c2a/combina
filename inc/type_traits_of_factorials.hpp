@@ -63,24 +63,17 @@ concept IsIntegerTypeInTheFactorialTable =
 
 template<typename T>
 concept IsIntegerTypeOutTheFactorialTable =
-        Is256BitInteger<T> ||
-        Is512BitInteger<T> ||
-        Is1024BitInteger<T> ||
+        Is256BitInteger<T> || Is512BitInteger<T> || Is1024BitInteger<T> ||
         IsInftyInteger<T>;
 
 template<typename T>
 concept Is8To128BitInteger =
-        Is8BitInteger<T> ||
-        Is16BitInteger<T> ||
-        Is32BitInteger<T> ||
-        Is64BitInteger<T> ||
-        Is128BitInteger<T>;
+        Is8BitInteger<T> || Is16BitInteger<T> || Is32BitInteger<T> ||
+        Is64BitInteger<T> || Is128BitInteger<T>;
 
 template<typename T>
 concept Is256To1024BitInteger =
-        Is256BitInteger<T> ||
-        Is512BitInteger<T> ||
-        Is1024BitInteger<T>;
+        Is256BitInteger<T> || Is512BitInteger<T> || Is1024BitInteger<T>;
 
 namespace implementation_details {
     using std::size_t;
@@ -129,8 +122,8 @@ namespace implementation_details {
     // Helper para generar arrays en tiempo de compilación.
     // --- Implementación interna ---
     // Recibe la secuencia de índices (0, 1, 2, ..., N-1) como un paquete de parámetros.
-    template<typename T, size_t N, typename Func, std::size_t... Is>
-    constexpr std::array<T, N> make_constexpr_array_impl(Func &&f, std::index_sequence<Is...>) {
+    template<typename T, size_t N, typename Func, size_t... Is>
+    constexpr std::array<T, N> make_constexpr_array_impl(Func &&f, index_sequence<Is...>) {
         // Usa una expansión de paquete para llamar a f(0), f(1), f(2), ...
         // y usar esos valores para inicializar el array.
         return {f(Is)...};
@@ -154,44 +147,100 @@ namespace implementation_details {
         );
     }
 
-    template<IsFactorialSupportedInteger T>
-    constexpr T factorial_ct(const size_t k) {
+    template<IsFactorialSupportedInteger T, T k>
+    constexpr T factorial_ct() {
         using std::numeric_limits;
         constexpr size_t limit = get_factorial_limit<T>();
-
-        if constexpr (limit != 0) { // Si el tipo tiene un límite
-            if (k > limit) {
-                return 0; // Devuelve 0 para overflow
-            }
-        }
-
-        T res = 1;
-        for (size_t i{2}; i <= k; ++i) {
-            // Comprobación de overflow antes de multiplicar
-            if constexpr (limit != 0) {
-                if (res > numeric_limits<T>::max() / static_cast<T>(i)) {
-                    return 0; // Overflow
+        if constexpr ((is_signed_v<T>) && (k < 0)) {
+            // Si el tipo entero es signado
+            // y k es negativo
+            return static_cast<T>(-1); // Devuelve -1 para números negativos
+        } else if constexpr ((limit != 0) && (k > limit)) {
+            // Si el tipo es de longitud finita
+            // y k es mayor que el límite
+            return static_cast<T>(0); // Devuelve 0 para overflow
+        } else {
+            T res = static_cast<T>(1);
+            for (size_t i{2}; i <= k; ++i) {
+                // Comprobación de overflow antes de multiplicar
+                if constexpr (limit != 0) {
+                    if (res > numeric_limits<T>::max() / static_cast<T>(i)) {
+                        return 0; // Overflow en la siguiente multiplicación
+                        // Tipos de longitud finita
+                    }
                 }
+                res *= static_cast<T>(i);
             }
-            res *= static_cast<T>(i);
+            return res;
         }
-        return res;
     }
 
-    template<IsInftyInteger T>
-    constexpr T factorial_rt(const size_t k) {
-        T res{1};
-        for (size_t i{2}; i <= k; ++i) {
-            res *= static_cast<T>(i);
+    template<IsFactorialSupportedInteger T>
+    constexpr T factorial_rt(const T k) {
+        using std::numeric_limits;
+        static constexpr size_t limit = get_factorial_limit<T>();
+        if constexpr (is_signed_v<T>) {
+            // TIPOS SIGNADOS
+            if (k < 0) {
+                return static_cast<T>(-1); // ARGUMENTO NEGATIVO
+            } else if constexpr (limit != 0) {
+                // TIPOS DE LONGITUD FINITA
+                if (k > limit) {
+                    return static_cast<T>(0); // OVERFLOW TIPOS SIGNADOS FINITOS
+                } else {
+                    // TIPOS DE LONGITUD FINITA
+                    T res{static_cast<T>(1)};
+                    for (size_t i{2}; i <= k; ++i) {
+                        // Comprobación de overflow antes de multiplicar
+                        if (res > numeric_limits<T>::max() / static_cast<T>(i)) {
+                            return 0; // Overflow
+                        }
+                        res *= static_cast<T>(i);
+                    }
+                    return res; // RETORNO NORMAL PARA TIPOS SIGNADOS FINITOS
+                }
+            } else {
+                // TIPOS SIGNADOS DE LONGITUD ARBITRARIA
+                T res{static_cast<T>(1)};
+                for (size_t i{2}; i <= k; ++i) {
+                    res *= static_cast<T>(i);
+                }
+                return res; // RETORNO NORMAL PARA TIPOS SIGNADOS DE LONGITUD ARBITRARIA
+            }
+        } else {
+            // TIPOS NO SIGNADOS
+            if constexpr (limit != 0) {
+                // TIPOS NO SIGNADOS DE LONGITUD FINITA
+                if (k > limit) {
+                    return static_cast<T>(0); // OVERFLOW TIPOS NO SIGNADOS FINITOS
+                } else {
+                    // TIPOS NO SIGNADOS DE LONGITUD FINITA
+                    T res{static_cast<T>(1)};
+                    for (size_t i{2}; i <= k; ++i) {
+                        // Comprobación de overflow antes de multiplicar
+                        if (res > numeric_limits<T>::max() / static_cast<T>(i)) {
+                            return 0; // Overflow
+                        }
+                        res *= static_cast<T>(i);
+                    }
+                    return res; // RETORNO NORMAL PARA TIPOS NO SIGNADOS FINITOS
+                }
+            } else {
+                // TIPOS NO SIGNADOS DE LONGITUD ARBITRARIA
+                T res{static_cast<T>(1)};
+                for (size_t i{2}; i <= k; ++i) {
+                    res *= static_cast<T>(i);
+                }
+                return res; // RETORNO NORMAL PARA TIPOS NO SIGNADOS DE LONGITUD ARBITRARIA
+            }
         }
-        return res;
     }
 
     // Genera una tabla extendida de factoriales para tipos de cualquier tamaño en tiempo de compilación.
     template<IsFactorialSupportedInteger T, size_t Size>
     constexpr auto generate_extended_factorial_table() -> std::array<T, Size> {
         return make_constexpr_array<T, Size>([](size_t n) {
-            return factorial_ct<T>(n);
+            return factorial_rt<T>(static_cast<T>(n));
         });
     }
 
@@ -202,25 +251,24 @@ namespace implementation_details {
 
         if constexpr (is_signed_v<T>) {
             if (n < 0) {
-                return -1; // Caso 1: Número negativo
+                return static_cast<T>(-1); // Caso 1: Número negativo
             }
-        }
-
-        if constexpr (limit != 0) {
+        } 
+        
+        if constexpr (limit != 0) { // Aplica solo a tipos de longitud finita
             if (static_cast<size_t>(n) > limit) {
-                return 0; // Caso 2: Overflow
+                return static_cast<T>(0); // Caso 2: Desbordamiento
             }
-        }
-
-        // Caso 3: El número es válido, buscar en la tabla o calcular
-        if constexpr (limit != 0 && limit <= 170) {
+        } 
+        
+        if constexpr (limit != 0 && limit <= 170) { // Caso 3: El número es válido y está en la tabla
             constexpr size_t sz_table = limit + 1;
             static constexpr std::array<T, sz_table> table{generate_extended_factorial_table<T, sz_table>()};
             return table[static_cast<size_t>(n)];
-        } else {
+        } else { // Caso 4: Tipos de precisión arbitraria (o que exceden la tabla precalculada)
             return factorial_rt<T>(n);
         }
-    }
+    } // end function factorial_from_table
 } // namespace detail
 
 
